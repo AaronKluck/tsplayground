@@ -1,13 +1,38 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'TypeScript API',
+      version: '1.0.0',
+      description: 'A simple Express API with TypeScript',
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}`,
+      },
+    ],
+  },
+  apis: ['./src/*.ts'],
+};
+
+const specs = swaggerJsdoc(swaggerOptions);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Types
 interface User {
@@ -22,6 +47,50 @@ let users: User[] = [
   { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
 ];
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: User ID
+ *         name:
+ *           type: string
+ *           description: User name
+ *         email:
+ *           type: string
+ *           description: User email
+ *     ApiResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         data:
+ *           type: object
+ *         message:
+ *           type: string
+ */
+
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 // GET endpoint - Get all users
 app.get('/api/users', (req: Request, res: Response) => {
   try {
@@ -38,6 +107,24 @@ app.get('/api/users', (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *       404:
+ *         description: User not found
+ */
 // GET endpoint - Get user by ID
 app.get('/api/users/:id', (req: Request, res: Response) => {
   try {
@@ -64,6 +151,34 @@ app.get('/api/users/:id', (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Create new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Name and email are required
+ *       409:
+ *         description: User already exists
+ */
 // POST endpoint - Create new user
 app.post('/api/users', (req: Request, res: Response) => {
   try {
@@ -130,4 +245,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📍 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`📋 Swagger UI: http://localhost:${PORT}/api-docs`);
 });
