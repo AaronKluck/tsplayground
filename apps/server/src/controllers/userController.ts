@@ -27,7 +27,6 @@ export const createUser = asyncHandler(async (req: Request, res: Response): Prom
     // Basic validation
     if (!username || !email || !password_hash) {
         res.status(400).json({
-            success: false,
             message: 'username, email, password_hash are required'
         });
         return;
@@ -35,20 +34,14 @@ export const createUser = asyncHandler(async (req: Request, res: Response): Prom
 
     try {
         const user = await db.createUser({ username, email, password_hash });
-        res.status(201).json({
-            success: true,
-            data: user,
-            message: 'User created successfully'
-        });
+        res.status(201).json(user);
     } catch (error) {
         if (error instanceof db.UserAlreadyExistsError) {
             res.status(409).json({
-                success: false,
                 message: 'User already exists'
             });
         } else {
             res.status(500).json({
-                success: false,
                 message: 'Internal server error'
             });
         }
@@ -59,20 +52,14 @@ export const getUserById = asyncHandler(async (req: Request, res: Response): Pro
     try {
         const userId = parseInt(req.params.id);
         const user = await db.getUserById(userId);
-        res.status(200).json({
-            success: true,
-            data: user,
-            message: 'User retrieved successfully'
-        });
+        res.status(200).json(user);
     } catch (error) {
         if (error instanceof db.UserNotFoundError) {
             res.status(404).json({
-                success: false,
                 message: error.message
             });
         } else {
             res.status(500).json({
-                success: false,
                 message: 'Internal server error'
             });
         }
@@ -80,16 +67,19 @@ export const getUserById = asyncHandler(async (req: Request, res: Response): Pro
 });
 
 export const deleteUserById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const userId = parseInt(req.params.id);
-    if (await db.deleteUser(userId)) {
-        res.status(200).json({
-            success: true,
-            message: 'User deleted successfully'
-        });
-    } else {
-        res.status(404).json({
-            success: false,
-            message: 'User not found'
-        });
+    try {
+        const userId = parseInt(req.params.id);
+        const user = await db.deleteUser(userId);
+        res.status(200).json(user);
+    } catch (error) {
+        if (error instanceof db.UserNotFoundError) {
+            res.status(404).json({
+                message: error.message
+            });
+        } else {
+            res.status(500).json({
+                message: 'Internal server error'
+            });
+        }
     }
 });

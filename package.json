@@ -7,8 +7,8 @@
     ],
     "scripts": {
         "build": "tsc -b",
-        "dev:server": "npm --workspace=server run dev",
-        "dev:client": "npm --workspace=client run dev",
+        "dev:server": "npm --workspace=tsplayground-server run dev",
+        "dev:client": "npm --workspace=tsplayground-client run dev",
         "build:all": "npm run build --workspaces",
         "clean": "tsc -b --clean",
         "format": "prettier --write .",

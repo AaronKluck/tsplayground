@@ -68,7 +68,8 @@ export async function createUser(user: NewUser): Promise<User> {
       );
 
       const newUser = await db.get<User>(`SELECT * FROM users WHERE id = ?`, result.lastID);
-      if (!newUser) throw new UserNotFoundError('User creation failed unexpectedly');
+      if (!newUser)
+        throw new UserNotFoundError('User creation failed unexpectedly');
       return newUser;
     } catch (err: any) {
       if (err.code === 'SQLITE_CONSTRAINT') {
@@ -81,9 +82,10 @@ export async function createUser(user: NewUser): Promise<User> {
 
 export async function getUserById(id: number): Promise<User> {
   const db = await initDb();
-  const result = await db.get<User>(`SELECT * FROM users WHERE id = ?`, id);
-  if (!result) throw new UserNotFoundError(`User with ID ${id} not found`);
-  return result;
+  const user = await db.get<User>(`SELECT * FROM users WHERE id = ?`, id);
+  if (!user)
+    throw new UserNotFoundError(`User with ID ${id} not found`);
+  return user;
 }
 
 export async function getAllUsers(): Promise<User[]> {
@@ -115,8 +117,18 @@ export async function updateUser(id: number, updates: Partial<NewUser>): Promise
   });
 }
 
-export async function deleteUser(id: number): Promise<boolean> {
+export async function deleteUser(id: number): Promise<User> {
   const db = await initDb();
-  const result = await db.run(`DELETE FROM users WHERE id = ?`, id);
-  return (result.changes ?? 0) > 0;
+
+  return withTransaction(db, async () => {
+    const user = await db.get<User>(`SELECT * FROM users WHERE id = ?`, id);
+    if (!user)
+      throw new UserNotFoundError(`User with ID ${id} not found`);
+
+    const result = await db.run(`DELETE FROM users WHERE id = ?`, id);
+    if (!result.changes)
+      throw new UserNotFoundError('User creation failed unexpectedly');
+
+    return user;
+  });
 }
