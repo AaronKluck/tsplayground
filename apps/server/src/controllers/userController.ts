@@ -14,11 +14,7 @@ const asyncHandler = (
 
 
 export const getAllUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    res.status(200).json({
-        success: true,
-        data: await db.getAllUsers(),
-        message: 'Users retrieved successfully'
-    });
+    res.status(200).json(await db.getAllUsers());
 });
 
 export const createUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
